@@ -133,6 +133,15 @@ class AStarPlanner(object):
         # Array that contains the optimal distance to come from the starting state
         dist_to_come = float("inf") * np.ones((world.shape[0], world.shape[1]))
         dist_to_come[start_state.x, start_state.y] = 0
+        ## Init the f(x) array
+        lower_bound = float("inf")* np.ones((world.shape[0], world.shape[1]))
+        lower_bound[start_state.x, start_state.y] = self.heuristic(start_state,dest_state)
+
+        ## Add the source to the priority queue
+        Q[start_state] = lower_bound[start_state.x, start_state.y]
+
+        
+
 
         # Boolean array that is true iff the distance to come of a state has been
         # finalized
@@ -165,12 +174,31 @@ class AStarPlanner(object):
                 # if the state ns has not been visited before or we just found a shorter path
                 # to visit it then update its priority in the queue, and also its
                 # distance to come and its parent
-                if (ns not in Q) or (alternative_dist_to_come_to_ns < dist_to_come[ns.x, ns.y]):
-                    Q[ns] = alternative_dist_to_come_to_ns
+                if (ns not in Q):
+                    ##Update cost to come of ns
                     dist_to_come[ns.x, ns.y] = alternative_dist_to_come_to_ns
+                    ##Priority (Lower bound)
+                    lower_bound[ns.x,ns.y] = dist_to_come[ns.x,ns.y] + self.heuristic(ns, dest_state) 
+                    ##Add to Q
+                    Q[ns]=lower_bound[ns.x, ns.y]
+                    ##Set parent to be s
                     parents[ns] = s
+
+                    
+                elif (alternative_dist_to_come_to_ns < dist_to_come[ns.x, ns.y]):
+                    dist_to_come[ns.x, ns.y] = alternative_dist_to_come_to_ns
+                    lower_bound[ns.x,ns.y] = dist_to_come[ns.x,ns.y] + self.heuristic(ns, dest_state)
+                    Q[ns] = lower_bound[ns.x, ns.y]
+                    ##Set parent to be s
+                    parents[ns] = s
+
                     
         return [start_state]
+
+
+    def heuristic(self,current_state, end_state):
+            return sqrt((current_state.x - end_state.x)**2 + (current_state.y - end_state.y)**2)
+
 
 
     
@@ -187,7 +215,9 @@ if __name__ == "__main__":
     astar = AStarPlanner(world)
 
     start_state = State(10, 10)
-    dest_state = State(500, 500)
+    #dest_state = State(500, 500)
+    # State 2:
+    dest_state = State(137,620)
     
     plan = astar.plan(start_state, dest_state)
     draw_plan(world, plan)
