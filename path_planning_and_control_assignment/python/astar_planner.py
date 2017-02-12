@@ -127,7 +127,8 @@ class AStarPlanner(object):
 
         # Q is a mutable priority queue implemented as a dictionary
         Q = priority_dict()
-        Q[start_state] = 0.0
+        #Q[start_state] = 0.0  #For A*, insert F(v) in Q
+        
 
         # Array that contains the optimal distance to come from the starting state
         dist_to_come = float("inf") * np.ones((world.shape[0], world.shape[1]))
