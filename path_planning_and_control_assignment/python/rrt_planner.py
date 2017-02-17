@@ -72,8 +72,13 @@ class RRTPlanner(object):
         """
         #TODO: make sure you're not exceeding the row and columns bounds
         # x must be in {0, cols-1} and y must be in {0, rows -1}
-        x = 0
-        y = 0
+
+        ## No angles so we dont have to worry about Gimbal Lock
+        x = random.randint(0,self.occ_grid.shape[0]-1)
+        y = random.randint(0,self.occ_grid.shape[1]-1)
+        #print("random state: "+str(x)+", "+str(y))
+        ##x = 0
+        ##y = 0
         return State(x, y, None)
            
 
@@ -122,10 +127,25 @@ class RRTPlanner(object):
         #TODO: populate x and y properly according to the description above.
         #Note: x and y are integers and they should be in {0, ..., cols -1}
         # and {0, ..., rows -1} respectively
-        x = 0
-        y = 0
+        
+        ##Custom
+        if (s_nearest.euclidean_distance(s_rand) <= max_radius):
+            #print("Close enough !")
+            x = s_rand.x
+            y = s_rand.y
+        else:
+            ## Here find point on line
+            #prop = s_nearest.euclidean_distance(s_rand)
+            #x = s_nearest.x+((abs(s_nearest.x - s_rand.x))/prop)*max_radius
+            #y = s_nearest.y+((abs(s_nearest.y - s_rand.y))/prop)*max_radius
+            dx = (s_rand.x-s_nearest.x)
+            dy = (s_rand.y-s_nearest.y)
+            #print("dx: "+str(dx) + "  dy: "+str(dy))
+            dist = sqrt(dx**2+dy**2)
+            x = s_nearest.x+(float(dx)/float(dist))*max_radius
+            y = s_nearest.y+(float(dy)/float(dist))*max_radius
 
-        s_new = State(x, y, s_nearest)
+        s_new = State(int(x), int(y), s_nearest)
         return s_new
 
 
@@ -140,10 +160,28 @@ class RRTPlanner(object):
             return False
 
         max_checks = 10
+        print("Start state:  ("+str(s_from.x)+" ,"+str(s_from.y)+") ")
+        print("Target state:  ("+str(s_to.x)+" ,"+str(s_to.y)+") ")
         for i in xrange(max_checks):
             # TODO: check if the inteprolated state that is float(i)/max_checks * dist(s_from, s_new)
             # away on the line from s_from to s_new is free or not. If not free return False
-            return False
+            ##return False
+            #time.sleep(1)
+            dx = (s_to.x-s_from.x)
+            dy = (s_to.y-s_from.y)
+            dist = sqrt(dx**2+dy**2)
+            #print("i: "+str(i)+"dist: "+str(dist))
+            if(dist==0):
+                continue #To avoid div by 0. If dist is 0, state is already checked anyway
+            #x = s_from.x+(float(dx)/float(dist))*(float(i)/max_checks)*dist
+            #y = s_from.y+(float(dy)/float(dist))*(float(i)/max_checks)*dist
+            x = s_from.x+(float(i)/max_checks)*dx
+            y = s_from.y+(float(i)/max_checks)*dy
+            s_test = State(int(x), int(y), s_from)
+            print("  i: "+str(i)+"  coords:  ("+str(s_test.x)+" ,"+str(s_test.y)+") ")
+            if not (self.state_is_free(s_test)):
+                print("Occupied state");
+                return False
             
         # Otherwise the line is free, so return true
         return True
@@ -155,6 +193,11 @@ class RRTPlanner(object):
         if dest_state is reachable from start_state. Otherwise returns [start_state].
         Assume both source and destination are in free space.
         """
+
+        ## n is max_num_steps
+        ## V is Set of nodes
+        ## E is Set of edges
+
         assert (self.state_is_free(start_state))
         assert (self.state_is_free(dest_state))
 
@@ -171,8 +214,13 @@ class RRTPlanner(object):
 
             # TODO: Use the methods of this class as in the slides to
             # compute s_new
-            s_nearest = None
-            s_new = None
+
+            ## use steer(Nearest, Random)
+            
+            s_rand = self.sample_state()
+            #cv2.circle(img, (s_rand.x, s_rand.y), 12, (255,255,255))
+            s_nearest = self.find_closest_state(tree_nodes,s_rand)
+            s_new = self.steer_towards(s_nearest,s_rand,max_steering_radius)
             
             if self.path_is_obstacle_free(s_nearest, s_new):
                 tree_nodes.add(s_new)
@@ -187,7 +235,8 @@ class RRTPlanner(object):
                 
                 # plot the new node and edge
                 cv2.circle(img, (s_new.x, s_new.y), 2, (0,0,0))
-                cv2.line(img, (s_nearest.x, s_nearest.y), (s_new.x, s_new.y), (255,0,0))
+                cv2.line(img, (s_nearest.x, s_nearest.y), (s_new.x, s_new.y), (255,0,0)) ##Red
+            #time.sleep(3)
 
             # Keep showing the image for a bit even
             # if we don't add a new node and edge
