@@ -135,12 +135,8 @@ class RRTPlanner(object):
             y = s_rand.y
         else:
             ## Here find point on line
-            #prop = s_nearest.euclidean_distance(s_rand)
-            #x = s_nearest.x+((abs(s_nearest.x - s_rand.x))/prop)*max_radius
-            #y = s_nearest.y+((abs(s_nearest.y - s_rand.y))/prop)*max_radius
             dx = (s_rand.x-s_nearest.x)
             dy = (s_rand.y-s_nearest.y)
-            #print("dx: "+str(dx) + "  dy: "+str(dy))
             dist = sqrt(dx**2+dy**2)
             x = s_nearest.x+(float(dx)/float(dist))*max_radius
             y = s_nearest.y+(float(dy)/float(dist))*max_radius
@@ -165,22 +161,15 @@ class RRTPlanner(object):
         for i in xrange(max_checks):
             # TODO: check if the inteprolated state that is float(i)/max_checks * dist(s_from, s_new)
             # away on the line from s_from to s_new is free or not. If not free return False
-            ##return False
-            #time.sleep(1)
             dx = (s_to.x-s_from.x)
             dy = (s_to.y-s_from.y)
             dist = sqrt(dx**2+dy**2)
-            #print("i: "+str(i)+"dist: "+str(dist))
             if(dist==0):
-                continue #To avoid div by 0. If dist is 0, state is already checked anyway
-            #x = s_from.x+(float(dx)/float(dist))*(float(i)/max_checks)*dist
-            #y = s_from.y+(float(dy)/float(dist))*(float(i)/max_checks)*dist
+                continue ## To avoid div by 0. If dist is 0, state is already checked anyway
             x = s_from.x+(float(i)/max_checks)*dx
             y = s_from.y+(float(i)/max_checks)*dy
             s_test = State(int(x), int(y), s_from)
-            print("  i: "+str(i)+"  coords:  ("+str(s_test.x)+" ,"+str(s_test.y)+") ")
             if not (self.state_is_free(s_test)):
-                print("Occupied state");
                 return False
             
         # Otherwise the line is free, so return true
@@ -215,10 +204,8 @@ class RRTPlanner(object):
             # TODO: Use the methods of this class as in the slides to
             # compute s_new
 
-            ## use steer(Nearest, Random)
-            
+            ## Set variable nodes 
             s_rand = self.sample_state()
-            #cv2.circle(img, (s_rand.x, s_rand.y), 12, (255,255,255))
             s_nearest = self.find_closest_state(tree_nodes,s_rand)
             s_new = self.steer_towards(s_nearest,s_rand,max_steering_radius)
             
@@ -262,7 +249,7 @@ if __name__ == "__main__":
     rrt = RRTPlanner(world)
 
     start_state = State(10, 10, None)
-    dest_state = State(500, 500, None)
+    dest_state = State(612,30, None)
 
     max_num_steps = 1000     # max number of nodes to be added to the tree 
     max_steering_radius = 30 # pixels
